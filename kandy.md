@@ -28,3 +28,32 @@ These are just a few examples of IT software development and DevOps companies in
 * **Sri Lanka Software Services Association (SLSSA):** SLSSA is another association representing the IT industry in Sri Lanka. Their website provides information on IT companies and services, including software development and DevOps.
 
 I hope this information is helpful!
+
+
+---
+
+Here are some notable IT software development and DevOps companies based in Kandy, Sri Lanka:
+
+1. **Ascentic (Pvt) Ltd**: This company offers high-performing consultants and teams within development, design, data science, test, DevOps, and product management. They have a presence in both Sweden and Sri Lanka¹.
+
+2. **hSenid Software Lanka**: A leading software development company with a new branch in Kandy City Center. They provide innovative solutions and services to various industries, including telecoms, banking, government, and enterprise².
+
+3. **Soft-Master Technologies (Pvt) Ltd**: Established in 2000, this company provides high-quality programming and project management services, focusing on software development, including web development⁶.
+
+4. **Visual Net Solutions (Pvt) Ltd**: Founded in 2004, they specialize in system analysis and design, software development, network solutions, and selling computer accessories⁹.
+
+5. **Real IT Pvt Ltd**: They offer a range of IT services and solutions, including software development and IT consulting⁸.
+
+These companies are contributing significantly to the IT and DevOps landscape in Kandy. Are you looking for specific services or opportunities with any of these companies?
+
+Source: 
+(1) Swe-Lankan Software Development Company - Home page. https://www.ascentic.lk/.
+(2) hSenid Software Lanka Expands with New Branch in Kandy City Center. https://hsenidlanka.com/2023/04/27/hsenid-lanka-new-branch-kandy/.
+(3) . https://bing.com/search?q=IT+companies+in+Kandy.
+(4) Home | Visual Net Solutions. https://visualnetsl.com/.
+(5) Real It Pvt Ltd. https://www.facebook.com/realit.lk/.
+(6) Top 10+ IT Companies in Kandy (2024) - TechBehemoths. https://techbehemoths.com/companies/kandy.
+(7) List of Best Computer Software Solution Companies in Kandy. https://www.lankayp.com/category/Computer_software_solution/city:Kandy.
+(8) Search Software Companies in Kandy area - ZoomInfo. https://www.zoominfo.com/companies-search/location-sri-lanka----kandy-industry-software.
+(9) Softmaster Technologies Pvt Ltd. https://softmaster.lk/.
+(10) Avenir IT Private Limited. https://avenir.lk/.
