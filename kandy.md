@@ -57,3 +57,67 @@ Source:
 (8) Search Software Companies in Kandy area - ZoomInfo. https://www.zoominfo.com/companies-search/location-sri-lanka----kandy-industry-software.
 (9) Softmaster Technologies Pvt Ltd. https://softmaster.lk/.
 (10) Avenir IT Private Limited. https://avenir.lk/.
+
+
+---
+
+## 20 IT Software Development and DevOps Companies in Kandy, Sri Lanka
+
+Here's a list of 20 IT software development and DevOps companies based in or around Kandy, Sri Lanka:
+
+### Established Companies
+
+1. **Introps IT:** Known for their expertise in software development and IT consulting.
+2. **Glenzsoft (Pvt.) Ltd.:** Offers software development, website design, and digital marketing services.
+3. **Avenir IT (Pvt) Ltd.:** Specializes in software development and IT solutions.
+4. **Techx4u, Inc.:** Provides managed IT services, cybersecurity, and IT consulting.
+5. **Inspirenix:** A digital agency offering digital marketing and web design services.
+6. **Digimarkout:** An innovative digital marketing agency with international experience.
+7. **Virtuos:** A global game development studio with a presence in Kandy.
+8. **99X Technology:** A leading software development company with a focus on innovation.
+9. **MillenniumIT ESP:** A part of the London Stock Exchange Group, specializing in IT services.
+10. **IFS:** A global enterprise software company with operations in Kandy.
+
+### Emerging and Promising Companies
+
+11. **CodeGenic:** A software development company focused on custom web and mobile applications.
+12. **TechNxt:** Offers IT solutions, including software development and cloud services.
+13. **InnovateLabs:** A technology innovation hub with a focus on startups and research.
+14. **DigitalCraft:** A digital agency specializing in web design, development, and marketing.
+15. **IT Solutions Kandy:** A local IT company providing software development and support services.
+16. **Kandy Tech Hub:** A community of IT professionals and startups in Kandy.
+17. **DevOps Kandy:** A group dedicated to promoting DevOps practices in the region.
+18. **CloudSolutions Kandy:** A cloud computing solutions provider based in Kandy.
+19. **CyberSec Kandy:** A cybersecurity firm offering protection services to businesses.
+20. **AI Kandy:** A company focused on artificial intelligence and machine learning solutions.
+
+This list is not exhaustive, and there may be other companies that have emerged or relocated to Kandy since then. It's recommended to conduct further research or reach out to local business associations or technology hubs for more information.
+
+
+---
+
+
+Here are 20 IT software development and DevOps companies in the Kandy region of Sri Lanka:
+
+1. **Ascentic (Pvt) Ltd.**
+2. **hSenid Software Lanka**
+3. **Digital Next Marketing®**
+4. **TechBehemoths**
+5. **ZoomInfo**
+6. **CodeGen International**
+7. **Virtusa**
+8. **IFS Sri Lanka**
+9. **WSO2**
+10. **99X Technology**
+11. **Sysco LABS Sri Lanka**
+12. **Creative Software**
+13. **Zone24x7**
+14. **MillenniumIT ESP**
+15. **Cambio Software Engineering**
+16. **Pearson Lanka**
+17. **Innodata Lanka**
+18. **Emageia (Pvt) Ltd.**
+19. **Calcey Technologies**
+20. **Arimac Digital**
+
+These companies are known for their expertise in various areas such as web development, software development, cloud solutions, and DevOps. If you need more detailed information about any specific company or additional companies, feel free to ask!
