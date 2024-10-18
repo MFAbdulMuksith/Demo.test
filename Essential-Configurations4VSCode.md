@@ -4,17 +4,17 @@ I find the below basic settings very useful and hope it will be useful for you t
 ## 1. Insert Final Newline
 It is recommended to add an empty line at the end of the file as some old tools might misbehave without it and also it helps clean code changes in git when you add something at the bottom.
 
-* Text Editor → Files → Insert Final Newline = ☑ *
+*Text Editor → Files → Insert Final Newline = ☑*
 
 ## 2. Trim Trailing Whitespace
 Code with trailing whitespaces doesn’t look nice especially when you review codes and removing them automatically before you commit will keep the code tidy and make your peers happy.
 
-* Text Editor → Files → Trim Trailing Whitespace = ☑ *
+*Text Editor → Files → Trim Trailing Whitespace = ☑*
 
 ## 3. Auto Format Code on Save
 Auto formatting code is a helpful feature to keep the code in the proper structure, indentation, etc… to do that.
 
-* Text Editor → Formatting → Format On Save = ☑ *
+*Text Editor → Formatting → Format On Save = ☑*
 
 ---
 
