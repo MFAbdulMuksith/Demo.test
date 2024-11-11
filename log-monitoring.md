@@ -1,4 +1,4 @@
----
+
 
 On an Ubuntu server, logs are usually stored in the `/var/log` directory, which contains logs for the system, services, and various applications. Here’s a breakdown of common logs you’ll find there and what they track:
 
@@ -144,6 +144,7 @@ networks:
 
 ---
 
+
 ### 2. Create Loki and Promtail Configuration Files
 
 1. **Loki Configuration** (`/opt/container/loki/config.yml`):
@@ -240,3 +241,5 @@ networks:
 - Updated Docker Compose to manage the monitoring stack as a cohesive unit.
 
 This setup allows you to have centralized log monitoring integrated with Prometheus and Grafana, enabling easy correlation of logs with metrics for more effective troubleshooting and observability.
+
+---
