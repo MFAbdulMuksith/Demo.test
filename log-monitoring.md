@@ -624,5 +624,64 @@ Test each endpoint and query the logs in Grafana to confirm everything is proper
 
 ---
 
+The configuration is mostly correct, but using both the private and public IP addresses in the same scrape job can sometimes cause issues if Prometheus can't access one of them or if they point to the same Loki instance. Here are a few considerations and corrections:
+
+### Suggestions and Corrections
+
+1. **Separate Private and Public Access (if needed)**:
+   - If the private IP is intended for internal use and the public IP is only accessible externally, it’s best to split them into separate jobs. This allows for clear monitoring and error handling if one address becomes unreachable.
+
+2. **Clarify IP Addresses**:
+   - Ensure that `loki_private_ip` and `loki_public_ip` are reachable and not blocking access on port `3100`. If both IPs point to the same Loki instance, you typically only need one target for the scrape job.
+
+3. **Job Name and Target**:
+   - If you do need to use both IPs for redundancy or failover, it’s generally better to label them uniquely to avoid confusion.
+
+Here's the corrected approach with options depending on your exact use case:
+
+#### Option 1: Using Only Private IP for Internal Monitoring
+If Prometheus is only running internally, use the private IP or Docker service name (e.g., `loki` if on the same Docker network):
+
+```yaml
+scrape_configs:
+  - job_name: "loki"
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - "loki_private_ip:3100"  # Replace with actual private IP or Docker service name
+```
+
+#### Option 2: Separate Jobs for Private and Public IPs (If Needed)
+If you need to scrape both for availability monitoring, define two separate jobs:
+
+```yaml
+scrape_configs:
+  # Loki metrics collection - private IP
+  - job_name: "loki_private"
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - "loki_private_ip:3100"
+
+  # Loki metrics collection - public IP (for external monitoring, if required)
+  - job_name: "loki_public"
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - "loki_public_ip:3100"
+```
+
+### Final Notes
+- Replace `"loki_private_ip"` and `"loki_public_ip"` with the actual IP addresses or Docker network names.
+- Only use the public IP if external access is necessary; otherwise, the private IP or Docker network name should suffice.
+- Verify that both IPs can be accessed on port `3100` from the Prometheus container. 
+
+This setup ensures that each target is monitored as intended without redundancy or connectivity issues.
+
+
+---
+
+
+
 
 
