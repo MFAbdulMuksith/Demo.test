@@ -243,3 +243,163 @@ networks:
 This setup allows you to have centralized log monitoring integrated with Prometheus and Grafana, enabling easy correlation of logs with metrics for more effective troubleshooting and observability.
 
 ---
+
+To integrate logging with this stack, you can expand it by adding tools like **Loki** for log aggregation, **Promtail** for log scraping, and connecting **Grafana** to visualize logs. Here's a step-by-step guide to set this up:
+
+### Step 1: Add Loki and Promtail to `docker-compose.yaml`
+
+1. **Loki** will be responsible for storing and indexing logs.
+2. **Promtail** is an agent that will collect log data from various sources and send it to Loki.
+
+Update your `docker-compose.yaml` as follows:
+
+```yaml
+version: '3.9'
+
+services:
+  # Existing services remain the same
+
+  # Add Loki service
+  loki:
+    image: grafana/loki:2.6.1
+    restart: always
+    container_name: loki
+    ports:
+      - 3100:3100
+    volumes:
+      - /opt/container/loki/config.yml:/etc/loki/local-config.yaml # Loki config
+      - /opt/container/loki/data:/loki # Loki data store
+    command:
+      - '--config.file=/etc/loki/local-config.yaml'
+    networks:
+      - monitor
+
+  # Add Promtail service
+  promtail:
+    image: grafana/promtail:2.6.1
+    restart: always
+    container_name: promtail
+    volumes:
+      - /var/log:/var/log # Path to system logs
+      - /opt/container/promtail/config.yml:/etc/promtail/config.yml # Promtail config
+    command:
+      - '-config.file=/etc/promtail/config.yml'
+    networks:
+      - monitor
+
+networks:
+  monitor:
+    external: true
+```
+
+### Step 2: Configure Loki
+
+Create a Loki configuration file (e.g., `/opt/container/loki/config.yml`):
+
+```yaml
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+
+ingester:
+  lifecycler:
+    ring:
+      kvstore:
+        store: inmemory
+      replication_factor: 1
+
+schema_config:
+  configs:
+    - from: 2022-01-01
+      store: boltdb-shipper
+      object_store: filesystem
+      schema: v11
+      index:
+        prefix: index_
+        period: 24h
+
+storage_config:
+  boltdb_shipper:
+    active_index_directory: /loki/index
+    cache_location: /loki/cache
+    shared_store: filesystem
+  filesystem:
+    directory: /loki/chunks
+
+limits_config:
+  enforce_metric_name: false
+  max_cache_freshness_per_query: 10m
+
+chunk_store_config:
+  max_look_back_period: 0s
+
+table_manager:
+  retention_deletes_enabled: true
+  retention_period: 24h
+```
+
+### Step 3: Configure Promtail
+
+Create a Promtail configuration file (e.g., `/opt/container/promtail/config.yml`):
+
+```yaml
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /var/log/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: system
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: varlogs
+          __path__: /var/log/*.log
+```
+
+This config will:
+- Collect logs from `/var/log/*.log`
+- Push them to Loki on `http://loki:3100/loki/api/v1/push`
+
+### Step 4: Update Prometheus Config (prometheus.yml)
+
+To integrate log monitoring with Prometheus, you can set alerts based on Loki’s log metrics by configuring Prometheus. Add this to your `prometheus.yml` configuration file:
+
+```yaml
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  # Other scrape configs remain unchanged
+
+  - job_name: 'loki'
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['loki:3100']
+```
+
+### Step 5: Update Grafana to Use Loki as a Data Source
+
+1. Access Grafana at `http://localhost:3000` (or your Grafana URL).
+2. Go to **Configuration > Data Sources**.
+3. Add a new data source, select **Loki**.
+4. Set the **URL** to `http://loki:3100`.
+5. Save and test the data source.
+
+Now, you can use Grafana to create visualizations for both metrics (from Prometheus) and logs (from Loki). 
+
+### Step 6: Create Grafana Dashboards
+
+- **Log Dashboard**: In Grafana, create a dashboard for logs. You can visualize logs from different sources and use labels to filter logs.
+- **Metrics and Logs in the Same Dashboard**: You can correlate metrics from Prometheus with logs from Loki in a single dashboard.
+
+With this setup, you’ll have a comprehensive monitoring stack that includes both metric monitoring (via Prometheus) and log monitoring (via Loki).
+
+---
