@@ -484,3 +484,145 @@ By following these steps, your stack should provide comprehensive monitoring wit
 
 ---
 
+
+Your `prometheus.yml` configuration looks mostly correct, with a few adjustments to consider for readability and functionality:
+
+### Suggested Improvements and Explanations
+
+1. **Global Configuration Comments**: 
+   - Your comments mention both 15 seconds and 1 minute as the `scrape_interval`. Since it's set to `1m`, consider updating comments for consistency.
+
+2. **Alertmanager Configuration**:
+   - Make sure that the IP address `10.0.3.110` on port `9093` corresponds to your `alertmanager` service address. Otherwise, this section is correctly configured.
+
+3. **Scrape Interval**:
+   - Since some configurations need more frequent scraping (e.g., cAdvisor or node exporters for near-real-time data), you may consider overriding the `scrape_interval` for specific jobs by adding `scrape_interval` and `scrape_timeout` within each job.
+
+4. **Blackbox Exporter Configuration**:
+   - You’re using Blackbox for HTTP probing, which is correct. Make sure that the Blackbox `config.yml` contains corresponding modules `ray_ilooops` and `achieve-erp` with appropriate configurations for HTTP checks.
+
+5. **Loki Integration**:
+   - Ensure that `loki:3100` is accessible from the Prometheus container by either defining `loki` in the same Docker network or adjusting the IP if on a different host.
+
+Here’s an updated, cleaned-up version for readability and optimal settings:
+
+```yaml
+# Prometheus Configuration
+global:
+  scrape_interval: 1m
+  # Global scrape interval set to 1 minute. Customize as needed per job.
+
+# Alertmanager
+alerting:
+  alertmanagers:
+    - static_configs:
+      - targets:
+        - '10.0.3.110:9093'
+
+# Rule Files
+rule_files:
+  - /etc/prometheus/alert.rules.yml
+
+# Scrape Configurations
+scrape_configs:
+
+  # Scrape Prometheus itself
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # Node Exporter for Prometheus Host
+  - job_name: "prometheus-host-server"
+    static_configs:
+      - targets: ["10.0.3.110:9100"]
+
+  # Grafana Server Monitoring
+  - job_name: "grafana-service"
+    static_configs:
+      - targets: ["10.0.3.110:3000"]
+
+  # Alertmanager Monitoring
+  - job_name: "alert-manager-service"
+    static_configs:
+      - targets: ["10.0.3.110:9093"]
+
+  # cAdvisor for Container Metrics
+  - job_name: "cadvisor-service"
+    scrape_interval: 30s  # Set a faster scrape interval for cAdvisor if needed
+    static_configs:
+      - targets: ["10.0.3.110:8080"]
+
+  # Blackbox Exporter Monitoring
+  - job_name: "blackbox-service"
+    static_configs:
+      - targets: ["10.0.3.110:9115"]
+
+  # Node Exporter for ASH-Preprod Server
+  - job_name: "ASH-Preprod"
+    static_configs:
+      - targets: ["172.32.20.90:9100"]
+
+  # Node Exporter for Ilooops Production
+  - job_name: "ilooops-production-01"
+    static_configs:
+      - targets: ["10.0.2.124:9100"]
+
+  # Node Exporter for UAT Server
+  - job_name: "UAT-Server"
+    static_configs:
+      - targets: ["172.32.20.164:9100"]
+
+  # HTTP Probing for Ray Ilooops (Blackbox Exporter)
+  - job_name: "ray_ilooops"
+    metrics_path: /probe
+    params:
+      module: [ray_ilooops]  # Ensure this module exists in Blackbox configuration
+    static_configs:
+      - targets:
+          - https://ray.ilooops.com
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: 10.0.3.110:9115  # Blackbox exporter's address
+
+  # HTTP Probing for Achieve ERP (Blackbox Exporter)
+  - job_name: "achieve-erp"
+    metrics_path: /probe
+    params:
+      module: [achieve-erp]  # Ensure this module exists in Blackbox configuration
+    static_configs:
+      - targets:
+          - https://achieve-erp.com/
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: 10.0.3.110:9115  # Blackbox exporter's address
+
+  # Loki Monitoring
+  - job_name: "loki"
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["loki:3100"]
+```
+
+### Additional Notes
+
+- **Blackbox Modules**: Make sure your Blackbox Exporter configuration (`config.yml`) has defined modules `ray_ilooops` and `achieve-erp`, each specifying the necessary HTTP probing settings, including `method`, `timeout`, and `failure conditions`.
+  
+- **Network Configuration**: Since all these services need to be reachable, ensure they are on the same Docker network (in this case, `monitor`) and the correct IPs/hostnames are used in your Prometheus scrape configurations.
+
+This setup should now be complete for monitoring multiple services, including health checks through the Blackbox Exporter, system metrics through the Node Exporter, and container metrics through cAdvisor, all visible in Grafana with Loki for log aggregation. 
+
+Test each endpoint and query the logs in Grafana to confirm everything is properly integrated.
+
+
+---
+
+
+
