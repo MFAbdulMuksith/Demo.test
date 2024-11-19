@@ -731,3 +731,130 @@ Or, if you prefer the first style:
 - Both configurations will work as intended.
 - Choose the format that aligns with your team's standards or future maintenance needs.
 
+---
+
+To set up the Promtail Docker container with read-only access to log files, you need to handle permissions carefully. This involves:
+
+1. **Assigning the correct user and group IDs in the Docker container**.
+2. **Ensuring that Promtail has read-only access to the required directories**.
+
+Below are the detailed steps for setting up permissions for Promtail:
+
+### Step-by-Step Instructions
+
+#### 1. **Identify User and Group IDs on the Host**
+To run Promtail securely, you should use a non-root user. This requires identifying an appropriate `user:group` combination for file access. If you decide to create a dedicated user and group for Promtail, follow the steps below:
+
+1. **Create a dedicated user and group for Promtail**:
+   ```bash
+   sudo groupadd promtail
+   sudo useradd -g promtail -s /sbin/nologin promtail
+   ```
+
+2. **Identify the User and Group IDs**:
+   - Run the following command to find the user and group IDs:
+     ```bash
+     id promtail
+     ```
+   - You should get output like:
+     ```
+     uid=1001(promtail) gid=1001(promtail)
+     ```
+   - In this example, `1001` is both the user and group ID for the `promtail` user.
+
+#### 2. **Adjust Log Directory Permissions**
+To give Promtail read-only access to your log files:
+
+1. **Change the group ownership of log directories to `promtail`**:
+   - Assuming your logs are in `/var/log`:
+     ```bash
+     sudo chgrp -R promtail /var/log
+     ```
+   
+2. **Set group read-only permissions on log files**:
+   ```bash
+   sudo chmod -R g+rX /var/log
+   ```
+   - `g+rX`: Grants the group read (`r`) and execute (`X`) access.
+   
+3. **Ensure the `promtail` user does not have write access**:
+   ```bash
+   sudo chmod -R o-w /var/log
+   ```
+
+4. **Verify Permissions**:
+   - Use `ls -l` to check if log files have the appropriate permissions:
+     ```bash
+     ls -l /var/log
+     ```
+
+#### 3. **Modify the Docker Compose File to Use `user:group` IDs**
+Now that you have a dedicated user and group, modify the Docker Compose configuration for Promtail to use these IDs.
+
+Here’s the updated section for the Promtail service:
+
+```yaml
+# Promtail
+promtail:
+  image: grafana/promtail:2.8.0
+  container_name: promtail
+  user: "1001:1001"  # Replace with the correct UID:GID
+  read_only: true     # Ensures the container runs in read-only mode
+  volumes:
+    - /var/log:/var/log:ro  # Mount /var/log as read-only
+    - /etc/machine-id:/etc/machine-id:ro
+    - /opt/container/promtail/config/promtail-config.yml:/etc/promtail/promtail-config.yml:ro  # Config read-only
+  command: -config.file=/etc/promtail/promtail-config.yml
+  networks:
+    - monitor
+```
+
+### Explanation
+- **user: "1001:1001"**:
+  - Sets the Docker container to run as the `promtail` user (`UID 1001`) and `promtail` group (`GID 1001`).
+  - Replace `1001:1001` with the correct IDs you retrieved earlier.
+  
+- **read_only: true**:
+  - This is an additional security layer to ensure the container file system is read-only except for volumes specifically set otherwise.
+  
+- **Volumes**:
+  - `/var/log:/var/log:ro` mounts the `/var/log` directory in read-only mode (`:ro` flag).
+  - This ensures that Promtail can read but not modify or delete log files.
+  
+#### 4. **Run the Container and Verify Permissions**
+After updating the Docker Compose file, restart your Promtail container:
+
+```bash
+docker compose down
+docker compose up -d promtail
+```
+
+Verify that Promtail is able to read logs by checking:
+- The container logs:
+  ```bash
+  docker logs promtail
+  ```
+- If you encounter permission errors, check file ownership and permissions again using `ls -l /var/log`.
+
+### Additional Security Tips
+- **Use `AppArmor` or `SELinux`**:
+  - If your system supports `AppArmor` or `SELinux`, you can set additional security policies to enforce read-only access for the Promtail container.
+  
+- **Log Rotation**:
+  - Ensure you have a log rotation mechanism in place (e.g., `logrotate`) to manage and compress old logs while keeping Promtail's access intact.
+
+### Troubleshooting
+- If Promtail is unable to read logs due to permissions, check the Docker logs for errors. Use:
+  ```bash
+  docker logs promtail
+  ```
+- If you find permission issues, use:
+  ```bash
+  sudo chmod -R g+rX /var/log
+  ```
+- Make sure Docker Compose has applied the correct user by inspecting the container:
+  ```bash
+  docker inspect promtail | grep -i '"User":'
+  ```
+
+This setup ensures Promtail has secure and read-only access to the required log directories, minimizing the risk of accidental modification.
