@@ -858,3 +858,95 @@ Verify that Promtail is able to read logs by checking:
   ```
 
 This setup ensures Promtail has secure and read-only access to the required log directories, minimizing the risk of accidental modification.
+
+---
+
+The configuration you shared for the **Loki** service looks mostly correct, but let me confirm the details and provide additional recommendations to ensure it works optimally.
+
+### Key Points to Validate:
+
+1. **Configuration File Mount**:
+   - You are mounting `/opt/container/loki/config/loki-config.yml` to `/etc/loki/loki-config.yml` in the container. Make sure the source file (`/opt/container/loki/config/loki-config.yml`) exists and has the correct configuration for Loki.
+   
+2. **Data Volumes**:
+   - The volume mounts for data storage (`/opt/container/loki/data`) and WAL storage (`/opt/container/loki/wal`) seem correct.
+
+3. **Command**:
+   - The command is properly set to use the correct configuration file: `-config.file=/etc/loki/loki-config.yml`.
+
+### Best Practices and Considerations:
+
+1. **Volume Permissions**:
+   - Ensure that the `loki` container has the appropriate permissions to read/write to the directories `/opt/container/loki/data` and `/opt/container/loki/wal`. Loki requires read/write access to these directories for data storage.
+
+2. **Non-Root User Setup (Optional)**:
+   - If you want Loki to run with a specific user ID (UID) and group ID (GID), you can configure it similarly to the Promtail example earlier. This would involve setting the `user` field in the Docker Compose configuration and making sure the file permissions on the host match that user.
+
+3. **Read-Only Configuration Files**:
+   - If you want to ensure that the configuration file is mounted in a read-only mode, you can use the `:ro` option in the volume mount.
+
+### Revised Loki Configuration (Optional Adjustments)
+
+Here’s an improved version that includes mounting the configuration file as read-only and optionally running with a non-root user:
+
+```yaml
+# Loki
+loki:
+  image: grafana/loki:2.8.0
+  container_name: loki
+  ports:
+    - 3100:3100
+  user: "1001:1001"  # Optional: Replace with appropriate UID:GID if using a non-root user
+  volumes:
+    - /opt/container/loki/config/loki-config.yml:/etc/loki/loki-config.yml:ro  # Mount config file as read-only
+    - /opt/container/loki/data:/loki
+    - /opt/container/loki/wal:/wal
+  command: -config.file=/etc/loki/loki-config.yml
+  networks:
+    - monitor
+```
+
+### Explanation of Changes:
+- **Read-Only Configuration File**:
+  - I added `:ro` to the mount of the config file: `/opt/container/loki/config/loki-config.yml:/etc/loki/loki-config.yml:ro`. This ensures Loki cannot modify the configuration file.
+
+- **User Field (Optional)**:
+  - If you decide to run Loki as a non-root user, specify the `user` field. Replace `"1001:1001"` with the correct UID:GID that has the necessary permissions to access the data directories. Make sure the `loki` data directories on the host (`/opt/container/loki/data` and `/opt/container/loki/wal`) have correct ownership and permissions:
+    ```bash
+    sudo chown -R 1001:1001 /opt/container/loki/data
+    sudo chown -R 1001:1001 /opt/container/loki/wal
+    ```
+
+### Things to Verify:
+1. **Configuration File**:
+   - Confirm that `/opt/container/loki/config/loki-config.yml` has correct permissions to be readable by the user running the Loki container:
+     ```bash
+     sudo chmod 644 /opt/container/loki/config/loki-config.yml
+     ```
+   - This grants read permissions to the owner and group, and read permissions to others.
+
+2. **Directory Permissions**:
+   - Ensure that `/opt/container/loki/data` and `/opt/container/loki/wal` are writable by the user running Loki (if you are using a non-root user).
+
+### Troubleshooting
+- If there are permission errors when starting Loki, inspect the logs:
+  ```bash
+  docker logs loki
+  ```
+- To validate which user the container is running as, use:
+  ```bash
+  docker exec -it loki whoami
+  docker exec -it loki id
+  ```
+- If Loki cannot write to the directories, adjust ownership or permissions:
+  ```bash
+  sudo chown -R 1001:1001 /opt/container/loki/data /opt/container/loki/wal
+  ```
+
+This setup will ensure that Loki runs securely and has the necessary permissions for log storage while protecting the configuration file from unintended modifications.
+
+
+---
+
+
+
