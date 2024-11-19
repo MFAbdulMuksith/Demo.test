@@ -1842,3 +1842,150 @@ chown -R monitoring_user:monitoring_user /monitoring
 By applying these permissions, you ensure that the monitoring stack runs securely and minimizes unauthorized access risks.
 
 ---
+
+---
+
+To set up a Grafana dashboard for monitoring logs using **Loki**, **Promtail**, and **Prometheus**, you need to follow a structured process to integrate logs into Grafana. Below are the detailed steps:
+
+### **Step-by-Step Setup of Grafana Dashboard for Loki, Promtail, and Prometheus**
+
+#### **1. Setup of Loki and Promtail**
+Before creating the dashboard, ensure that you have Loki and Promtail set up properly. If you already have them running, you can skip this step.
+
+**1.1 Install Loki**
+Loki is the log aggregation system, which is similar to Prometheus but for logs.
+
+- If you use Docker:
+  ```bash
+  docker run -d --name=loki -p 3100:3100 \
+  -v /path/to/loki/config:/etc/loki/config \
+  grafana/loki:2.8.0
+  ```
+
+- If you use Kubernetes, use Helm:
+  ```bash
+  helm repo add grafana https://grafana.github.io/helm-charts
+  helm install loki grafana/loki-stack
+  ```
+
+**1.2 Install Promtail**
+Promtail is the agent responsible for sending log data to Loki.
+
+- Download and configure Promtail:
+  ```bash
+  wget https://github.com/grafana/loki/releases/download/v2.8.0/promtail-linux-amd64.zip
+  unzip promtail-linux-amd64.zip
+  chmod +x promtail-linux-amd64
+  ```
+
+- **Promtail configuration** (`promtail-config.yaml`):
+  ```yaml
+  server:
+    http_listen_port: 9080
+    grpc_listen_port: 0
+
+  positions:
+    filename: /tmp/positions.yaml
+
+  clients:
+    - url: http://localhost:3100/loki/api/v1/push
+
+  scrape_configs:
+    - job_name: system
+      static_configs:
+        - targets:
+            - localhost
+          labels:
+            job: varlogs
+            __path__: /var/log/*.log
+  ```
+
+- Run Promtail:
+  ```bash
+  ./promtail-linux-amd64 -config.file=promtail-config.yaml
+  ```
+
+#### **2. Integrate Loki with Grafana**
+
+**2.1 Add Loki as a Data Source in Grafana**
+- Open Grafana in your web browser (default `http://localhost:3000`).
+- Go to **Configuration** (gear icon) → **Data Sources** → **Add Data Source**.
+- Choose **Loki**.
+- Fill in the URL for Loki (default `http://localhost:3100`) and click on **Save & Test**.
+
+#### **3. Setting Up Prometheus (If Not Already Configured)**
+
+- Ensure Prometheus is already monitoring your system with Node Exporter metrics.
+- Add **Promtail** as a job in Prometheus for scraping if you need additional metrics related to logs:
+  
+  ```yaml
+  scrape_configs:
+    - job_name: 'promtail'
+      static_configs:
+        - targets: ['localhost:9080']
+  ```
+
+#### **4. Create Grafana Dashboard for Loki & Prometheus**
+
+**4.1 Create New Dashboard in Grafana**
+- In Grafana, click on the **+** icon (Create) → **Dashboard** → **Add New Panel**.
+
+**4.2 Set Up Loki Log Panel**
+- Select **Query Type** as `Logs`.
+- Choose **Loki** as the data source.
+- Use a basic Loki query to display logs:
+  ```loki
+  {job="varlogs"}
+  ```
+- Adjust the **Time Range** and select appropriate **Log Labels** to filter and visualize logs as required.
+
+**4.3 Use Prometheus Metrics for Log Monitoring**
+- If you want to combine Prometheus metrics with Loki logs:
+  - Add a new panel.
+  - Select `Prometheus` as the data source.
+  - Use appropriate Prometheus queries, such as:
+    ```prometheus
+    rate(promtail_processed_bytes_total[5m])
+    ```
+  - You can add graphs, alert counts, or error counts as metrics to track the efficiency of log processing.
+
+#### **5. Additional Visualization Options**
+
+**5.1 Log Graph Panel**
+- Use the **Logs** visualization in Grafana to filter and search logs.
+- Add additional panels for metrics like:
+  - **Error Rate**: `sum(rate(promtail_scrape_errors_total[5m]))`
+  - **Log Size Over Time**: `sum(rate(promtail_bytes_processed_total[5m]))`
+  - **Log Counts by Level**:
+    ```loki
+    count_over_time({job="varlogs"} |~ "error" [1m])
+    ```
+
+**5.2 Combining Logs and Metrics (Mixed Data Sources)**
+- Create a panel using the "Mixed" type, which allows combining both **Prometheus** and **Loki** queries.
+- Example: Display CPU metrics alongside relevant logs:
+  ```prometheus
+  node_cpu_seconds_total{mode="idle"}
+  ```
+  alongside:
+  ```loki
+  {job="varlogs"} |~ "CPU"
+  ```
+
+#### **6. Save and Share the Dashboard**
+- After configuring the panels:
+  - Click **Save Dashboard** (top-right corner).
+  - Provide a name, tags, and description if necessary.
+  - Use **Share** to provide a URL or snapshot for other users.
+
+### **Additional Tips**
+- Use **Variables** in Grafana to make the dashboard more dynamic. Variables can represent labels, job names, or log levels to make it easier to filter logs and metrics.
+- Set up **Alerts** in Grafana if you need to get notified about specific log patterns or metric thresholds.
+- Use the **Explore** feature in Grafana to test out queries for both Loki and Prometheus.
+
+### **References**
+- [Grafana Documentation on Loki](https://grafana.com/docs/loki/latest/)
+- [Promtail Configuration Guide](https://grafana.com/docs/loki/latest/clients/promtail/)
+- [Prometheus Integration with Loki](https://grafana.com/docs/loki/latest/operations/monitoring/)
+
+This setup should provide a comprehensive logging and monitoring dashboard with a blend of metrics and logs using Prometheus and Loki.
