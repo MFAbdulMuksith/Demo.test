@@ -286,3 +286,114 @@ ENTRYPOINT [ "./docker/entrypoint.sh" ]
   ```
 
 By following this updated Dockerfile, you’ll have a PHP environment that fully supports MSSQL, allowing you to connect and operate with a Microsoft SQL Server database.
+
+
+---
+
+---
+
+The error message indicates that something went wrong during the installation of Microsoft ODBC drivers or the `pecl` extensions. Here’s how you can diagnose and fix the problem step by step:
+
+---
+
+### **1. Check for Network Issues**
+Ensure the Docker build has access to the internet to fetch dependencies. If you are behind a proxy, configure Docker to use the proxy.
+
+---
+
+### **2. Validate the `curl` Commands**
+Update the `curl` commands to ensure the URLs are correct and accessible. Sometimes URLs can become outdated. Replace:
+```sh
+curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /etc/apt/trusted.gpg.d/microsoft.gpg
+curl https://packages.microsoft.com/config/ubuntu/20.04/prod.list > /etc/apt/sources.list.d/mssql-release.list
+```
+with:
+```sh
+curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/microsoft.gpg
+curl -fsSL https://packages.microsoft.com/config/ubuntu/20.04/prod.list -o /etc/apt/sources.list.d/mssql-release.list
+```
+The `-fsSL` flags improve reliability by suppressing unnecessary output and ensuring failure detection.
+
+---
+
+### **3. Update Microsoft ODBC Dependencies**
+The `msodbcsql17` and `mssql-tools` packages have specific dependencies that need to be met. Update the Dockerfile to explicitly install these:
+```dockerfile
+RUN ACCEPT_EULA=Y apt-get update && apt-get install -y \
+    msodbcsql17 \
+    unixodbc \
+    libgssapi-krb5-2
+```
+This ensures all required libraries are available.
+
+---
+
+### **4. Ensure Compatibility with PHP Extensions**
+The `pecl` installation might fail due to missing dependencies or version mismatches. Add the following to install required packages before running `pecl`:
+```dockerfile
+RUN apt-get update && apt-get install -y \
+    php7.4-dev \
+    make \
+    gcc \
+    g++ \
+    unixodbc-dev \
+    libxml2-dev && \
+    pecl install sqlsrv pdo_sqlsrv && \
+    echo "extension=sqlsrv.so" > /etc/php/7.4/apache2/conf.d/30-sqlsrv.ini && \
+    echo "extension=pdo_sqlsrv.so" > /etc/php/7.4/apache2/conf.d/30-pdo_sqlsrv.ini
+```
+
+---
+
+### **5. Use a Multi-Stage Build for Cleanup**
+A large number of unnecessary files might remain in the intermediate stages. Using a multi-stage build can help reduce the clutter and avoid potential conflicts:
+```dockerfile
+# Temporary build stage for dependencies
+FROM ubuntu:20.04 as builder
+
+# Install dependencies and compile ODBC driver
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    software-properties-common \
+    curl \
+    gnupg2 \
+    build-essential \
+    php7.4-dev \
+    unixodbc-dev \
+    libgssapi-krb5-2 \
+    libxml2-dev && \
+    curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/microsoft.gpg && \
+    curl -fsSL https://packages.microsoft.com/config/ubuntu/20.04/prod.list -o /etc/apt/sources.list.d/mssql-release.list && \
+    apt-get update && \
+    ACCEPT_EULA=Y apt-get install -y msodbcsql17 mssql-tools && \
+    pecl install sqlsrv pdo_sqlsrv && \
+    echo "extension=sqlsrv.so" > /tmp/sqlsrv.ini && \
+    echo "extension=pdo_sqlsrv.so" > /tmp/pdo_sqlsrv.ini
+
+# Final stage
+FROM ubuntu:20.04
+
+# Copy built extensions from the builder stage
+COPY --from=builder /tmp/sqlsrv.ini /etc/php/7.4/apache2/conf.d/30-sqlsrv.ini
+COPY --from=builder /tmp/pdo_sqlsrv.ini /etc/php/7.4/apache2/conf.d/30-pdo_sqlsrv.ini
+
+# Rest of the Dockerfile...
+```
+
+---
+
+### **6. Debug Build**
+If the above steps don’t resolve the issue, debug the failing step by running:
+```sh
+docker run -it --entrypoint "/bin/bash" <image_id>
+```
+Inspect logs and manually run commands to locate the exact failure point.
+
+---
+
+### **7. Final Cleanup**
+Ensure all `rm -rf /var/lib/apt/lists/*` and `apt-get clean` commands are executed only after installing dependencies to avoid removing essential metadata.
+
+After implementing these fixes, try rebuilding the image:
+```sh
+docker build -t my-php-app .
+```
