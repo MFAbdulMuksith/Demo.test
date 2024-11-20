@@ -181,3 +181,110 @@ Set up Grafana alerts to notify when specific patterns or errors occur in logs:
 ---
 
 Would you like assistance with writing specific queries in Grafana or further customizing the stack?
+
+
+---
+
+The error message indicates that Loki is unable to create the **Write-Ahead Log (WAL)** folder due to a **permission issue**. This is preventing Loki from starting correctly. Here's how to resolve it:
+
+---
+
+## **Steps to Fix the Issue**
+
+### 1. **Identify the Problem**
+The key part of the error message is:
+```plaintext
+creating WAL folder at "/wal": mkdir wal: permission denied
+```
+This means Loki does not have the necessary permissions to create or write to the directory where it needs to store its data.
+
+---
+
+### 2. **Modify Loki's Configuration**
+By default, Loki tries to use `/wal` as the WAL directory. You can configure it to use a directory where Loki has the proper permissions.
+
+1. **Edit the Loki Configuration File**:
+   In your `loki-config.yml`, set a writable directory for WAL storage:
+   ```yaml
+   storage_config:
+     boltdb_shipper:
+       active_index_directory: /tmp/loki/boltdb-shipper-active
+       cache_location: /tmp/loki/boltdb-shipper-cache
+       shared_store: filesystem
+     filesystem:
+       directory: /tmp/loki/chunks
+   ```
+
+2. **Ensure Loki Uses the Updated Configuration**:
+   Verify that your Docker Compose file maps the correct config:
+   ```yaml
+   volumes:
+     - ./loki-config.yml:/etc/loki/local-config.yaml
+   ```
+
+---
+
+### 3. **Ensure Writable Directories**
+Create the necessary directories with the correct permissions.
+
+1. **Create Directories on the Host**:
+   ```bash
+   mkdir -p /tmp/loki/chunks /tmp/loki/boltdb-shipper-active /tmp/loki/boltdb-shipper-cache
+   ```
+
+2. **Set Proper Permissions**:
+   Allow Loki to write to these directories:
+   ```bash
+   sudo chmod -R 777 /tmp/loki
+   ```
+
+---
+
+### 4. **Check Docker Compose Volumes**
+Ensure the container has access to the required directories:
+```yaml
+loki:
+  image: grafana/loki:2.5.0
+  ports:
+    - "3100:3100"
+  volumes:
+    - /tmp/loki:/tmp/loki
+    - ./loki-config.yml:/etc/loki/local-config.yaml
+```
+
+---
+
+### 5. **Restart the Loki Container**
+Restart Loki to apply changes:
+```bash
+docker-compose down
+docker-compose up -d
+```
+
+---
+
+### 6. **Verify Logs**
+Check Loki's logs to ensure it is running correctly:
+```bash
+docker logs ubuntu-loki-1
+```
+You should see a successful startup message without permission errors.
+
+---
+
+## **Additional Debugging**
+If the issue persists:
+- **Inspect File Ownership**: Ensure Docker can access host directories:
+  ```bash
+  ls -ld /tmp/loki
+  ```
+  Adjust ownership if necessary:
+  ```bash
+  sudo chown -R $USER:$USER /tmp/loki
+  ```
+
+- **Run as Non-Root User**: If running Docker with a non-root user, ensure that user has write permissions for the mapped directories.
+
+---
+
+Let me know if further clarification or assistance is needed!
